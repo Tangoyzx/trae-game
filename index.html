@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI编程学习 - 2D平台跳跃游戏</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        #gameContainer {
+            position: relative;
+            border: 2px solid #333;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        #gameCanvas {
+            background-color: #87CEEB;
+            display: block;
+        }
+        #score {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 24px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        #instructions {
+            margin-top: 20px;
+            max-width: 600px;
+            background-color: white;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        #instructions h2 {
+            margin-top: 0;
+            color: #333;
+        }
+        #instructions p {
+            margin: 10px 0;
+            line-height: 1.5;
+        }
+        code {
+            background-color: #f4f4f4;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>AI编程学习 - 2D平台跳跃游戏</h1>
+    <div id="gameContainer">
+        <div id="score">分数: 0</div>
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+    </div>
+    <div id="instructions">
+        <h2>游戏说明</h2>
+        <p>这是一个简单的2D平台跳跃游戏，你可以通过修改JavaScript代码中的<code>aiControl</code>函数来控制角色！</p>
+        <h3>游戏目标</h3>
+        <p>1. 收集黄色金币获得分数</p>
+        <p>2. 到达红色旗帜处完成关卡</p>
+        <h3>AI编程接口</h3>
+        <p>修改<code>aiControl</code>函数，使用以下方法控制角色：</p>
+        <ul>
+            <li><code>player.moveLeft()</code> - 向左移动</li>
+            <li><code>player.moveRight()</code> - 向右移动</li>
+            <li><code>player.jump()</code> - 跳跃</li>
+        </ul>
+        <p>你可以使用以下信息来做决策：</p>
+        <ul>
+            <li><code>player.x</code>, <code>player.y</code> - 玩家位置</li>
+            <li><code>platforms</code> - 所有平台的列表</li>
+            <li><code>coins</code> - 所有金币的列表</li>
+            <li><code>goal</code> - 终点位置</li>
+        </ul>
+    </div>
+
+    <script>
+        // 游戏配置常量
+        const CANVAS_WIDTH = 800;
+        const CANVAS_HEIGHT = 600;
+        const GRAVITY = 0.5;
+        const JUMP_FORCE = -15;
+        const MOVE_SPEED = 5;
+
+        // 获取Canvas和上下文
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreElement = document.getElementById('score');
+
+        // 玩家类
+        class Player {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.width = 30;
+                this.height = 30;
+                this.velocityX = 0;
+                this.velocityY = 0;
+                this.onGround = false;
+                this.score = 0;
+            }
+
+            // 绘制玩家
+            draw() {
+                ctx.fillStyle = '#4169E1'; // 蓝色
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+            }
+
+            // 更新玩家状态
+            update(platforms, coins, goal) {
+                // 应用重力
+                this.velocityY += GRAVITY;
+                
+                // 更新位置
+                this.x += this.velocityX;
+                this.y += this.velocityY;
+
+                // 边界检查
+                if (this.x < 0) this.x = 0;
+                if (this.x + this.width > CANVAS_WIDTH) this.x = CANVAS_WIDTH - this.width;
+                if (this.y > CANVAS_HEIGHT + 100) {
+                    // 掉出屏幕，玩家死亡
+                    gameState = GameState.DEAD;
+                }
+
+                // 碰撞检测
+                this.onGround = false;
+                for (let platform of platforms) {
+                    if (this.checkCollision(platform)) {
+                        // 计算重叠区域
+                        const overlapX = Math.min(this.x + this.width, platform.x + platform.width) - Math.max(this.x, platform.x);
+                        const overlapY = Math.min(this.y + this.height, platform.y + platform.height) - Math.max(this.y, platform.y);
+                        
+                        // 确定碰撞方向
+                        if (overlapX < overlapY) {
+                            // 左右碰撞
+                            if (this.x < platform.x) {
+                                this.x = platform.x - this.width;
+                            } else {
+                                this.x = platform.x + platform.width;
+                            }
+                            this.velocityX = 0;
+                        } else {
+                            // 上下碰撞
+                            if (this.velocityY > 0) {
+                                // 从上方碰撞（落地）
+                                this.y = platform.y - this.height;
+                                this.velocityY = 0;
+                                this.onGround = true;
+                            } else if (this.velocityY < 0) {
+                                // 从下方碰撞（头顶到平台）
+                                this.y = platform.y + platform.height;
+                                this.velocityY = 0;
+                            }
+                        }
+                    }
+                }
+
+                // 收集金币
+                for (let i = coins.length - 1; i >= 0; i--) {
+                    if (this.checkCollision(coins[i])) {
+                        coins.splice(i, 1);
+                        this.score++;
+                        scoreElement.textContent = `分数: ${this.score}`;
+                    }
+                }
+
+                // 检查是否到达终点
+                if (this.checkCollision(goal)) {
+                    alert(`恭喜！你完成了关卡！\n分数: ${this.score}`);
+                    this.reset();
+                }
+            }
+
+            // 碰撞检测
+            checkCollision(object) {
+                return this.x < object.x + object.width &&
+                       this.x + this.width > object.x &&
+                       this.y < object.y + object.height &&
+                       this.y + this.height > object.y;
+            }
+
+            // 移动方法
+            moveLeft() {
+                this.velocityX = -MOVE_SPEED;
+            }
+
+            moveRight() {
+                this.velocityX = MOVE_SPEED;
+            }
+
+            jump() {
+                if (this.onGround) {
+                    this.velocityY = JUMP_FORCE;
+                    this.onGround = false;
+                }
+            }
+
+            // 停止移动
+            stop() {
+                this.velocityX = 0;
+            }
+
+            // 重置玩家
+            reset() {
+                this.x = 50;
+                this.y = 50;
+                this.velocityX = 0;
+                this.velocityY = 0;
+                this.onGround = false;
+                this.score = 0;
+                scoreElement.textContent = `分数: ${this.score}`;
+                initGame();
+            }
+        }
+
+        // 平台类
+        class Platform {
+            constructor(x, y, width, height) {
+                this.x = x;
+                this.y = y;
+                this.width = width;
+                this.height = height;
+            }
+
+            // 绘制平台
+            draw() {
+                ctx.fillStyle = '#32CD32'; // 绿色
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+            }
+        }
+
+        // 金币类
+        class Coin {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.width = 20;
+                this.height = 20;
+                this.angle = 0;
+            }
+
+            // 绘制金币
+            draw() {
+                ctx.save();
+                ctx.translate(this.x + this.width/2, this.y + this.height/2);
+                ctx.rotate(this.angle);
+                
+                ctx.fillStyle = '#FFD700'; // 金色
+                ctx.beginPath();
+                ctx.arc(0, 0, this.width/2, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.fillStyle = '#FFA500'; // 橙色
+                ctx.beginPath();
+                ctx.arc(0, 0, this.width/3, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.restore();
+                
+                this.angle += 0.1;
+            }
+        }
+
+        // 终点类
+        class Goal {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.width = 40;
+                this.height = 60;
+            }
+
+            // 绘制终点
+            draw() {
+                // 旗杆
+                ctx.fillStyle = '#8B4513'; // 棕色
+                ctx.fillRect(this.x + this.width/2 - 5, this.y, 10, this.height);
+                
+                // 旗帜
+                ctx.fillStyle = '#FF0000'; // 红色
+                ctx.fillRect(this.x, this.y, this.width, this.height/2);
+            }
+        }
+
+        // 游戏状态枚举
+        const GameState = {
+            RUNNING: 'running',
+            PAUSED: 'paused',
+            DEAD: 'dead'
+        };
+
+        // 当前游戏状态
+        let gameState = GameState.RUNNING;
+
+        // 键盘状态跟踪
+        const keys = {
+            a: false,
+            d: false,
+            space: false,
+            r: false
+        };
+
+        // 添加键盘事件监听器
+        document.addEventListener('keydown', (e) => {
+            // 阻止游戏控制键的默认浏览器行为
+            if (['a', 'd', ' ', 'r', 'A', 'D', 'R'].includes(e.key)) {
+                e.preventDefault();
+            }
+            
+            if (e.key === 'a' || e.key === 'A') {
+                keys.a = true;
+            } else if (e.key === 'd' || e.key === 'D') {
+                keys.d = true;
+            } else if (e.key === ' ') {
+                keys.space = true;
+            } else if (e.key === 'r' || e.key === 'R') {
+                keys.r = true;
+                // 如果游戏处于死亡状态，按R键重启
+                if (gameState === GameState.DEAD) {
+                    restartGame();
+                }
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (e.key === 'a' || e.key === 'A') {
+                keys.a = false;
+            } else if (e.key === 'd' || e.key === 'D') {
+                keys.d = false;
+            } else if (e.key === ' ') {
+                keys.space = false;
+            } else if (e.key === 'r' || e.key === 'R') {
+                keys.r = false;
+            }
+        });
+
+        // AI控制函数 - 这是你需要修改的地方！
+        function aiControl(player, platforms, coins, goal) {
+            // 示例AI：简单地向右移动和跳跃
+            // 现在被键盘控制替代
+        }
+
+        // 键盘控制函数
+        function keyboardControl(player) {
+            // 停止默认移动
+            player.stop();
+            
+            // 左右移动
+            if (keys.a) {
+                player.moveLeft();
+            } else if (keys.d) {
+                player.moveRight();
+            }
+            
+            // 跳跃
+            if (keys.space) {
+                player.jump();
+            }
+        }
+
+        // 游戏对象
+        let player;
+        let platforms = [];
+        let coins = [];
+        let goal;
+
+        // 初始化游戏
+        function initGame() {
+            // 重置游戏对象
+            platforms = [];
+            coins = [];
+            
+            // 创建玩家
+            player = new Player(50, 50);
+            
+            // 创建平台
+            platforms.push(new Platform(0, CANVAS_HEIGHT - 50, CANVAS_WIDTH, 50)); // 地面
+            platforms.push(new Platform(100, 500, 150, 20)); // 平台1
+            platforms.push(new Platform(300, 400, 150, 20)); // 平台2
+            platforms.push(new Platform(500, 300, 150, 20)); // 平台3
+            platforms.push(new Platform(200, 200, 150, 20)); // 平台4
+            platforms.push(new Platform(600, 100, 150, 20)); // 平台5
+            
+            // 创建金币
+            coins.push(new Coin(150, 470));
+            coins.push(new Coin(200, 470));
+            coins.push(new Coin(350, 370));
+            coins.push(new Coin(400, 370));
+            coins.push(new Coin(550, 270));
+            coins.push(new Coin(250, 170));
+            coins.push(new Coin(650, 70));
+            
+            // 创建终点
+            goal = new Goal(700, 50);
+        }
+
+        // 重启游戏函数
+        function restartGame() {
+            gameState = GameState.RUNNING;
+            initGame();
+        }
+
+        // 游戏主循环
+        function gameLoop() {
+            // 清空画布
+            ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+            
+            // 根据游戏状态执行不同逻辑
+            if (gameState === GameState.RUNNING) {
+                // 键盘控制
+                keyboardControl(player);
+                
+                // AI控制（仍然保留，方便切换）
+                // aiControl(player, platforms, coins, goal);
+                
+                // 更新玩家
+                player.update(platforms, coins, goal);
+            }
+            else if (gameState === GameState.DEAD) {
+                // 绘制死亡提示
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+                
+                ctx.fillStyle = 'white';
+                ctx.font = '48px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('游戏结束', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 50);
+                
+                ctx.font = '24px Arial';
+                ctx.fillText('按 R 键重新开始', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 20);
+            }
+            
+            // 绘制所有游戏对象（无论游戏状态）
+            platforms.forEach(platform => platform.draw());
+            coins.forEach(coin => coin.draw());
+            goal.draw();
+            player.draw();
+            
+            // 下一帧
+            requestAnimationFrame(gameLoop);
+        }
+
+        // 初始化并启动游戏
+        initGame();
+        gameLoop();
+    </script>
+</body>
+</html>

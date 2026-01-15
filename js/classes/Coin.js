@@ -1,31 +1,18 @@
-// 金币类
-export class Coin {
-    constructor(x, y) {
-        this.x = x;
-        this.y = y;
-        this.width = 20;
-        this.height = 20;
-        this.angle = 0;
-    }
+import { Entity } from '../components/Entity.js';
+import { Transform } from '../components/Transform.js';
+import { Physics } from '../components/Physics.js';
+import { Coin as CoinComponent } from '../components/Coin.js';
+import { Rotation } from '../components/Rotation.js';
 
-    // 绘制金币
-    draw(ctx) {
-        ctx.save();
-        ctx.translate(this.x + this.width/2, this.y + this.height/2);
-        ctx.rotate(this.angle);
-        
-        ctx.fillStyle = '#FFD700'; // 金色
-        ctx.beginPath();
-        ctx.arc(0, 0, this.width/2, 0, Math.PI * 2);
-        ctx.fill();
-        
-        ctx.fillStyle = '#FFA500'; // 橙色
-        ctx.beginPath();
-        ctx.arc(0, 0, this.width/3, 0, Math.PI * 2);
-        ctx.fill();
-        
-        ctx.restore();
-        
-        this.angle += 0.1;
+// 金币类，使用组件组合
+export class Coin extends Entity {
+    constructor(x, y) {
+        super();
+
+        // 添加组件
+        this.addComponent(new Transform({ x, y, width: 20, height: 20 }))
+            .addComponent(new Physics({ applyGravity: false }))
+            .addComponent(new Rotation())
+            .addComponent(new CoinComponent());
     }
 }

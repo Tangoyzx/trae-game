@@ -10,6 +10,10 @@
 
 ```
 ├── index.html              # 游戏主页面，只包含简单的HTML结构和入口脚本
+├── assets/                 # 游戏资源目录
+│   ├── animations/         # 动画配置文件
+│   ├── sprites/            # 精灵和序列帧贴图
+│   └── textures/           # 静态纹理
 ├── js/                     # JavaScript代码目录
 │   ├── main.js             # 游戏入口文件，初始化游戏
 │   ├── game.js             # 游戏主逻辑，包含游戏循环和状态管理
@@ -20,6 +24,20 @@
 │   │   ├── Coin.js         # 金币类
 │   │   ├── Goal.js         # 终点类
 │   │   └── Enemy.js        # 敌人类
+│   ├── components/         # 组件系统
+│   │   ├── Entity.js       # 实体基类
+│   │   ├── Transform.js    # 变换组件
+│   │   ├── Physics.js      # 物理组件
+│   │   ├── Render.js       # 渲染组件
+│   │   ├── SpriteAnimator.js # 序列帧动画组件
+│   │   ├── PlayerControl.js # 玩家控制组件
+│   │   ├── AI.js           # AI组件
+│   │   ├── Chase.js        # 追击AI组件
+│   │   ├── Patrol.js       # 巡逻AI组件
+│   │   ├── Rotation.js     # 旋转组件
+│   │   ├── Coin.js         # 金币组件
+│   │   ├── Goal.js         # 终点组件
+│   │   └── Enemy.js        # 敌人组件
 │   └── controls/           # 控制模块
 │       ├── KeyboardController.js  # 键盘控制
 │       └── AIController.js        # AI控制
@@ -27,6 +45,7 @@
     ├── architecture.md     # 整体架构文档
     ├── config.md           # 配置模块文档
     ├── classes.md          # 游戏类文档
+    ├── components.md       # 组件系统文档
     ├── controls.md         # 控制模块文档
     ├── game.md             # 游戏主逻辑文档
     └── rules.md            # 项目全局规则

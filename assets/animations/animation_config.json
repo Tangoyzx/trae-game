@@ -1,0 +1,108 @@
+{
+  "player": {
+    "spriteSheet": "assets/sprites/player/player_sheet.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "animations": {
+      "idle": {
+        "row": 0,
+        "frameCount": 4,
+        "frameRate": 8,
+        "loop": true
+      },
+      "walk": {
+        "row": 1,
+        "frameCount": 8,
+        "frameRate": 12,
+        "loop": true
+      },
+      "jump": {
+        "row": 2,
+        "frameCount": 2,
+        "frameRate": 10,
+        "loop": false
+      },
+      "fall": {
+        "row": 3,
+        "frameCount": 2,
+        "frameRate": 10,
+        "loop": false
+      },
+      "death": {
+        "row": 4,
+        "frameCount": 6,
+        "frameRate": 15,
+        "loop": false
+      }
+    }
+  },
+  "enemy": {
+    "spriteSheet": "assets/sprites/enemy/enemy_sheet.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "animations": {
+      "patrol": {
+        "row": 0,
+        "frameCount": 6,
+        "frameRate": 10,
+        "loop": true
+      },
+      "chase": {
+        "row": 1,
+        "frameCount": 8,
+        "frameRate": 12,
+        "loop": true
+      },
+      "attack": {
+        "row": 2,
+        "frameCount": 4,
+        "frameRate": 15,
+        "loop": false
+      },
+      "death": {
+        "row": 3,
+        "frameCount": 5,
+        "frameRate": 12,
+        "loop": false
+      }
+    }
+  },
+  "coin": {
+    "spriteSheet": "assets/sprites/coin/coin_sheet.png",
+    "frameWidth": 16,
+    "frameHeight": 16,
+    "animations": {
+      "spin": {
+        "row": 0,
+        "frameCount": 8,
+        "frameRate": 10,
+        "loop": true
+      },
+      "collected": {
+        "row": 1,
+        "frameCount": 6,
+        "frameRate": 15,
+        "loop": false
+      }
+    }
+  },
+  "goal": {
+    "spriteSheet": "assets/sprites/goal/goal_sheet.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "animations": {
+      "idle": {
+        "row": 0,
+        "frameCount": 6,
+        "frameRate": 8,
+        "loop": true
+      },
+      "active": {
+        "row": 1,
+        "frameCount": 8,
+        "frameRate": 12,
+        "loop": true
+      }
+    }
+  }
+}

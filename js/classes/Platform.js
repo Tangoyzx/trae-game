@@ -1,15 +1,16 @@
-// 平台类
-export class Platform {
-    constructor(x, y, width, height) {
-        this.x = x;
-        this.y = y;
-        this.width = width;
-        this.height = height;
-    }
+import { Entity } from '../components/Entity.js';
+import { Transform } from '../components/Transform.js';
+import { Physics } from '../components/Physics.js';
+import { Render } from '../components/Render.js';
 
-    // 绘制平台
-    draw(ctx) {
-        ctx.fillStyle = '#32CD32'; // 绿色
-        ctx.fillRect(this.x, this.y, this.width, this.height);
+// 平台类，使用组件组合
+export class Platform extends Entity {
+    constructor(x, y, width, height) {
+        super();
+
+        // 添加组件
+        this.addComponent(new Transform({ x, y, width, height }))
+            .addComponent(new Physics({ applyGravity: false }))
+            .addComponent(new Render({ color: '#32CD32' })); // 绿色
     }
 }

@@ -4,7 +4,7 @@ export class Chase {
         this.name = 'chase';
         this.entity = null;
         this.chaseSpeed = options.chaseSpeed || 1.5; // 进一步降低追击速度，从2改为1.5
-        this.alertRange = options.alertRange || 150;
+        this.alertRange = options.alertRange || 80;
         this.isChasing = false;
     }
 

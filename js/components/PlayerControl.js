@@ -10,6 +10,9 @@ export class PlayerControl {
         this.gameState = 'playing';
         this.setGameState = null;
         
+        // 跳跃状态标志，用于防止持续按住跳跃键连续跳跃
+        this.wasJumping = false;
+        
         // 绑定事件监听器
         this.setupEventListeners();
     }
@@ -48,18 +51,19 @@ export class PlayerControl {
             physics.velocityX = 0;
         }
 
-        // 处理跳跃
-        if ((this.keys['ArrowUp'] || this.keys['Space'] || this.keys['KeyW']) && physics.onGround) {
+        // 处理跳跃 - 只有在按键按下瞬间才触发，而不是持续按住
+        const isJumpingKeyPressed = this.keys['ArrowUp'] || this.keys['Space'] || this.keys['KeyW'];
+        
+        if (isJumpingKeyPressed && !this.wasJumping && physics.onGround) {
             physics.velocityY = JUMP_FORCE;
             physics.onGround = false;
         }
+        
+        // 更新跳跃状态标志
+        this.wasJumping = isJumpingKeyPressed;
 
-        // 应用重力
-        physics.update(deltaTime);
-
-        // 更新位置
-        transform.x += physics.velocityX;
-        transform.y += physics.velocityY;
+        // 调用Physics组件处理物理更新和碰撞
+        physics.update(deltaTime, platforms);
 
         // 边界检查
         if (transform.x < 0) transform.x = 0;
@@ -68,9 +72,6 @@ export class PlayerControl {
             // 掉出屏幕，玩家死亡
             setGameState('dead');
         }
-
-        // 平台碰撞检测
-        this.handlePlatformCollisions(platforms, transform, physics);
 
         // 金币收集
         this.collectCoins(coins, physics);
@@ -82,45 +83,6 @@ export class PlayerControl {
             return true; // 表示游戏已完成，需要重新初始化
         }
         return false;
-    }
-
-    // 处理平台碰撞
-    handlePlatformCollisions(platforms, transform, physics) {
-        physics.onGround = false;
-
-        for (let platform of platforms) {
-            if (physics.checkCollision(platform)) {
-                const platformTransform = platform.getComponent('transform');
-                if (!platformTransform) continue;
-
-                // 计算重叠区域
-                const overlapX = Math.min(transform.x + transform.width, platformTransform.x + platformTransform.width) - Math.max(transform.x, platformTransform.x);
-                const overlapY = Math.min(transform.y + transform.height, platformTransform.y + platformTransform.height) - Math.max(transform.y, platformTransform.y);
-                
-                // 确定碰撞方向
-                if (overlapX < overlapY) {
-                    // 左右碰撞
-                    if (transform.x < platformTransform.x) {
-                        transform.x = platformTransform.x - transform.width;
-                    } else {
-                        transform.x = platformTransform.x + platformTransform.width;
-                    }
-                    physics.velocityX = 0;
-                } else {
-                    // 上下碰撞
-                    if (physics.velocityY > 0) {
-                        // 从上方碰撞（落地）
-                        transform.y = platformTransform.y - transform.height;
-                        physics.velocityY = 0;
-                        physics.onGround = true;
-                    } else if (physics.velocityY < 0) {
-                        // 从下方碰撞（头顶到平台）
-                        transform.y = platformTransform.y + platformTransform.height;
-                        physics.velocityY = 0;
-                    }
-                }
-            }
-        }
     }
 
     // 收集金币

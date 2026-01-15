@@ -84,33 +84,62 @@ export class Game {
         this.enemies = [];
         // 排除地面平台，只在其他平台上生成敌人
         const nonGroundPlatforms = this.platforms.slice(1);
-        // 随机生成敌人，不是每个平台都生成
-        for (let platform of nonGroundPlatforms) {
-            // 50%的概率在平台上生成敌人
-            if (Math.random() > 0.5) {
-                // 平台的Transform组件包含位置信息
-                const platformTransform = platform.getComponent('transform');
-                if (!platformTransform) continue;
+        
+        if (nonGroundPlatforms.length > 0) {
+            // 确保至少生成一个敌人
+            let enemiesGenerated = false;
+            
+            // 第一次遍历：至少在一个平台上生成敌人
+            const randomPlatformIndex = Math.floor(Math.random() * nonGroundPlatforms.length);
+            const firstPlatform = nonGroundPlatforms[randomPlatformIndex];
+            
+            const firstPlatformTransform = firstPlatform.getComponent('transform');
+            if (firstPlatformTransform) {
+                // 在随机选择的平台上生成第一个敌人
+                const enemyX = firstPlatformTransform.x + Math.random() * (firstPlatformTransform.width - 30);
+                const enemyY = firstPlatformTransform.y - 30;
                 
-                // 在平台上随机位置生成敌人，确保敌人站在平台上
-                const enemyX = platformTransform.x + Math.random() * (platformTransform.width - 30);
-                const enemyY = platformTransform.y - 30; // 敌人高度30，正好站在平台上
-                
-                // 创建敌人
                 const enemy = new Enemy(enemyX, enemyY);
                 
-                // 设置敌人初始状态，确保站在平台上
                 const enemyTransform = enemy.getComponent('transform');
                 const enemyPhysics = enemy.getComponent('physics');
                 
                 if (enemyTransform && enemyPhysics) {
-                    // 确保敌人位置正确，直接站在平台上
-                    enemyTransform.y = platformTransform.y - enemyTransform.height;
+                    enemyTransform.y = firstPlatformTransform.y - enemyTransform.height;
                     enemyPhysics.onGround = true;
                     enemyPhysics.velocityY = 0;
                 }
                 
                 this.enemies.push(enemy);
+                enemiesGenerated = true;
+            }
+            
+            // 第二次遍历：在其他平台上随机生成更多敌人（可选）
+            for (let i = 0; i < nonGroundPlatforms.length; i++) {
+                if (i === randomPlatformIndex) continue; // 跳过已经生成敌人的平台
+                
+                const platform = nonGroundPlatforms[i];
+                // 50%的概率在其他平台上生成敌人
+                if (Math.random() > 0.5) {
+                    const platformTransform = platform.getComponent('transform');
+                    if (!platformTransform) continue;
+                    
+                    const enemyX = platformTransform.x + Math.random() * (platformTransform.width - 30);
+                    const enemyY = platformTransform.y - 30;
+                    
+                    const enemy = new Enemy(enemyX, enemyY);
+                    
+                    const enemyTransform = enemy.getComponent('transform');
+                    const enemyPhysics = enemy.getComponent('physics');
+                    
+                    if (enemyTransform && enemyPhysics) {
+                        enemyTransform.y = platformTransform.y - enemyTransform.height;
+                        enemyPhysics.onGround = true;
+                        enemyPhysics.velocityY = 0;
+                    }
+                    
+                    this.enemies.push(enemy);
+                }
             }
         }
     }

@@ -10,6 +10,8 @@ class Game {
         this.lastTime = 0;
         this.enemySpawnDistance = 500;
         this.maxEnemies = 10;
+        this.lastEnemySpawnTime = 0;
+        this.enemySpawnInterval = 5; // 5秒
     }
 
     initialize() {
@@ -72,28 +74,50 @@ class Game {
         if (this.entities.filter(e => e instanceof Enemy).length >= this.maxEnemies) {
             return;
         }
-        return;
         
         const playerPos = this.player.getComponent('Transform').position;
+        const tileSize = this.map.tileSize;
+        const mapWidth = this.map.width * tileSize;
+        const mapHeight = this.map.height * tileSize;
         
-        // 在玩家视野外生成敌人
-        let spawnX, spawnY;
-        const angle = Math.random() * Math.PI * 2;
+        // 计算视野范围
+        const viewRadius = Math.max(this.renderer.width, this.renderer.height) / 2 + 100; // 视野半径，额外加100像素确保在视野外
+        const viewLeft = playerPos.x - viewRadius;
+        const viewRight = playerPos.x + viewRadius;
+        const viewTop = playerPos.y - viewRadius;
+        const viewBottom = playerPos.y + viewRadius;
         
-        spawnX = playerPos.x + Math.cos(angle) * this.enemySpawnDistance;
-        spawnY = playerPos.y + Math.sin(angle) * this.enemySpawnDistance;
+        // 收集所有视野外的土块位置
+        const validSpawnPositions = [];
         
-        // 确保敌人在地图范围内
-        const mapWidth = this.map.width * this.map.tileSize;
-        const mapHeight = this.map.height * this.map.tileSize;
+        for (let x = 0; x < this.map.width; x++) {
+            for (let y = 0; y < this.map.height; y++) {
+                const tile = this.map.getTile(x, y);
+                if (tile === 1) { // 1表示土地
+                    const worldX = x * tileSize;
+                    const worldY = y * tileSize;
+                    
+                    // 检查是否在视野外
+                    if (worldX < viewLeft || worldX > viewRight || worldY < viewTop || worldY > viewBottom) {
+                        validSpawnPositions.push({ x: worldX, y: worldY });
+                    }
+                }
+            }
+        }
         
-        spawnX = Math.max(0, Math.min(mapWidth - 32, spawnX));
-        spawnY = Math.max(0, Math.min(mapHeight - 32, spawnY));
+        // 如果没有合适的位置，就不生成敌人
+        if (validSpawnPositions.length === 0) {
+            return;
+        }
+        
+        // 随机选择一个位置
+        const spawnPos = validSpawnPositions[Math.floor(Math.random() * validSpawnPositions.length)];
         
         const enemy = new Enemy()
-            .addComponent(new Transform({ x: spawnX, y: spawnY }))
+            .addComponent(new Transform({ x: spawnPos.x, y: spawnPos.y }))
             .addComponent(new RendererComponent({ color: '#FF0000', width: 32, height: 32 }))
             .addComponent(new AI(this.player))
+            .addComponent(new Movement({ speed: 3, jumpForce: 12 }))
             .addComponent(new PhysicsBody({ width: 32, height: 32 }));
         
         enemy.game = this;
@@ -115,9 +139,11 @@ class Game {
     }
 
     update(deltaTime) {
-        // 随机生成敌人
-        if (Math.random() < 0.01) {
+        // 定时生成敌人
+        this.lastEnemySpawnTime += deltaTime;
+        if (this.lastEnemySpawnTime >= this.enemySpawnInterval) {
             this.spawnEnemy();
+            this.lastEnemySpawnTime = 0;
         }
         
         // 更新相机

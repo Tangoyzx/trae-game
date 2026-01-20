@@ -45,7 +45,13 @@ class Game {
         const mapHeight = 50;
         const tileSize = 32;
         
-        this.map = new MapGenerator(mapWidth, mapHeight, tileSize).generate();
+        // 使用固定种子以便测试和复现
+        const seed = 12345;
+        this.map = new MapGenerator(mapWidth, mapHeight, tileSize, seed).generate();
+        
+        // 简单的地图验证
+        console.log('地图生成完成，尺寸:', mapWidth, 'x', mapHeight);
+        console.log('玩家出生点:', this.map.getPlayerSpawn());
     }
 
     createPlayer() {

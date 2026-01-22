@@ -7,6 +7,8 @@ class Game {
         this.camera = null;
         this.map = null;
         this.player = null;
+        this.uiManager = null;
+        this.inventory = null;
         this.lastTime = 0;
         this.enemySpawnDistance = 500;
         this.maxEnemies = 10;
@@ -37,9 +39,46 @@ class Game {
         // 设置相机目标
         this.camera.setTarget(this.player);
         
+        // 初始化UI系统
+        this.initializeUI();
+        
         // 开始游戏循环
         this.lastTime = performance.now();
         requestAnimationFrame(this.gameLoop.bind(this));
+    }
+    
+    // 初始化UI系统
+    initializeUI() {
+        // 创建UI管理器
+        this.uiManager = new UIManager(this);
+        
+        // 创建物品栏
+        this.inventory = new Inventory({
+            game: this,
+            player: this.player
+        });
+        
+        // 将物品栏添加到UI管理器
+        this.uiManager.addElement(this.inventory);
+        
+        // 为玩家添加一些初始物品
+        this.addInitialItemsToPlayer();
+    }
+    
+    // 为玩家添加初始物品
+    addInitialItemsToPlayer() {
+        // 使用物品工厂创建一些初始物品
+        const items = [
+            itemFactory.createItem(1, 5),  // 5个生命药水
+            itemFactory.createItem(2, 3),  // 3个力量药水
+            itemFactory.createItem(5),     // 铁剑
+            itemFactory.createItem(7, 100) // 100个金币
+        ];
+        
+        // 将物品添加到物品栏
+        for (const item of items) {
+            this.inventory.addItem(item);
+        }
     }
 
     generateMap() {
@@ -157,6 +196,11 @@ class Game {
         // 更新物理
         this.physics.update(deltaTime);
         
+        // 更新UI
+        if (this.uiManager) {
+            this.uiManager.update(deltaTime);
+        }
+        
         // 清理死亡实体
         this.entities = this.entities.filter(entity => entity.active);
     }
@@ -170,5 +214,10 @@ class Game {
         
         // 渲染实体
         this.renderer.renderEntities(this.entities);
+        
+        // 渲染UI
+        if (this.uiManager) {
+            this.uiManager.render(this.renderer.ctx);
+        }
     }
 }
